@@ -12,6 +12,7 @@
   <run_depend>roboskel_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
   <run_depend>rospy</run_depend>
 
 </package>
