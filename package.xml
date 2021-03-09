@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>irta_canopy_detection</name>
+  <version>0.0.1</version>
+  <description>iRTA canopy detection and valve control</description>
+
+  <maintainer email="gstavrinos@iit.demokritos.gr">George Stavrinos</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>roboskel_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>rospy</run_depend>
+
+</package>
