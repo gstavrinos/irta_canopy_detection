@@ -26,7 +26,8 @@ canopy_position = {
 loaded_model = pickle.load(open(path_to_model + model, 'rb'))
 
 max_effective_spraying_distance = 0.8 # meters
-effective_height_percentage = 0.4
+min_effective_height_percentage = 0.3
+max_effective_height_percentage = 0.6
 effective_width_percentage = 0.3
 max_depth_distance = 14.0 # meters
 min_close_percentage = 0.3
@@ -49,18 +50,21 @@ def depthCamCallback(msg):
     need_valve_on = False
     if canopy_detected:
         np_arr = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, -1)
-        poi = np_arr[int((1.0 - effective_height_percentage) * msg.height):,:int(effective_width_percentage * msg.width)] / 255.0 * max_depth_distance
+        poi = np_arr[int(min_effective_height_percentage * msg.height):int(max_effective_height_percentage * msg.height),:int(effective_width_percentage * msg.width)] / 255.0 * max_depth_distance
         need_valve_on = np.count_nonzero(poi <= max_effective_spraying_distance) >= min_close_percentage * poi.size
     if need_valve_on and not valve:
+        print("Sending on command")
         valve_publisher.publish(True)
         valve = True
     elif not need_valve_on and valve:
+        print("Sending off command")
         valve_publisher.publish(False)
         valve = False
 
 rospy.init_node("irta_canopy_detection")
 rospy.Subscriber("/usb_cam/image_raw", numpy_msg(Image), usbCamCallback)
-rospy.Subscriber("/camera/aligned_depth_to_color/image_raw", numpy_msg(Image), depthCamCallback)
+#  rospy.Subscriber("/camera/aligned_depth_to_color/image_raw", numpy_msg(Image), depthCamCallback)
+rospy.Subscriber("/camera/depth/image_rect_raw", numpy_msg(Image), depthCamCallback)
 valve_publisher = rospy.Publisher("/kymco_maxxer90_ackermann_steering_controller/spray_valve", Bool, queue_size=1)
 rospy.spin()
 
