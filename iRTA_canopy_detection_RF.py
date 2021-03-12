@@ -9,6 +9,7 @@ import numpy as np
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Image
 from PIL import Image as PILImage
+from geometry_msgs.msg import Twist
 from rospy.numpy_msg import numpy_msg
 
 path_to_current_directory = str(pathlib.Path().parent.absolute())
@@ -35,6 +36,7 @@ min_close_percentage = 0.3
 valve_publisher = None
 
 canopy_detected = False
+on_the_move = False
 valve = False
 
 def usbCamCallback(msg):
@@ -52,19 +54,24 @@ def depthCamCallback(msg):
         np_arr = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, -1)
         poi = np_arr[int(min_effective_height_percentage * msg.height):int(max_effective_height_percentage * msg.height),:int(effective_width_percentage * msg.width)] / 255.0 * max_depth_distance
         need_valve_on = np.count_nonzero(poi <= max_effective_spraying_distance) >= min_close_percentage * poi.size
-    if need_valve_on and not valve:
+    if need_valve_on and on_the_move and not valve:
         print("Sending on command")
         valve_publisher.publish(True)
         valve = True
-    elif not need_valve_on and valve:
+    elif (not need_valve_on or not on_the_move) and valve:
         print("Sending off command")
         valve_publisher.publish(False)
         valve = False
+
+def cmdVelCallback(msg):
+    global on_the_move
+    on_the_move = msg.linear.x > 0
 
 rospy.init_node("irta_canopy_detection")
 rospy.Subscriber("/usb_cam/image_raw", numpy_msg(Image), usbCamCallback)
 #  rospy.Subscriber("/camera/aligned_depth_to_color/image_raw", numpy_msg(Image), depthCamCallback)
 rospy.Subscriber("/camera/depth/image_rect_raw", numpy_msg(Image), depthCamCallback)
+rospy.Subscriber("/kymco_maxxer90_ackermann_steering_controller/cmd_vel", Twist, cmdVelCallback)
 valve_publisher = rospy.Publisher("/kymco_maxxer90_ackermann_steering_controller/spray_valve", Bool, queue_size=1)
 rospy.spin()
 
